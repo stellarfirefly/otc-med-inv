@@ -1,12 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import netlify from "@netlify/vite-plugin";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   plugins: [
     react(),
-    netlify(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["pwa.svg"],

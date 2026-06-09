@@ -51,48 +51,25 @@ export const lookupProductByUpc = async (rawUpc: string): Promise<ProductLookupR
     return cached;
   }
 
-  const proxied = await lookupNetlifyProductProxy(upc);
-  if (proxied) {
-    writeCachedLookup(proxied);
-    return proxied;
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    throw new Error(
+      "Product lookup needs an internet connection unless this UPC/EAN is already cached. Enter product details manually."
+    );
   }
 
-  const upcItem = await lookupUpcItemDb(upc);
-  if (upcItem) {
-    writeCachedLookup(upcItem);
-    return upcItem;
-  }
-
-  const foodFacts = await lookupOpenFoodFacts(upc);
-  if (foodFacts) {
-    writeCachedLookup(foodFacts);
-    return foodFacts;
-  }
-
-  throw new Error("No product details found for that UPC/EAN.");
-};
-
-const lookupNetlifyProductProxy = async (upc: string): Promise<ProductLookupResult | undefined> => {
-  try {
-    const response = await fetch(`/api/product-lookup?upc=${encodeURIComponent(upc)}`, {
-      headers: {
-        Accept: "application/json"
+  for (const provider of [lookupUpcItemDb, lookupOpenFoodFacts]) {
+    try {
+      const result = await provider(upc);
+      if (result) {
+        writeCachedLookup(result);
+        return result;
       }
-    });
-
-    if (!response.ok) {
-      return undefined;
+    } catch {
+      // Browser-hosted PWAs may hit offline, CORS, or provider rate-limit failures.
     }
-
-    const payload = (await response.json()) as ProductLookupResult;
-    if (!isLookupResult(payload)) {
-      return undefined;
-    }
-
-    return payload;
-  } catch {
-    return undefined;
   }
+
+  throw new Error("No product details found for that UPC/EAN. Enter product details manually.");
 };
 
 const lookupUpcItemDb = async (upc: string): Promise<ProductLookupResult | undefined> => {
@@ -252,17 +229,6 @@ const isNumericLookupCode = (value: string) => /^\d+$/.test(value);
 const cleanText = (value?: string) => value?.replace(/\s+/g, " ").trim() ?? "";
 
 const firstCsvValue = (value?: string) => cleanText(value?.split(",")[0]);
-
-const isLookupResult = (value: ProductLookupResult): value is ProductLookupResult =>
-  Boolean(
-    value &&
-      (value.source === "UPCitemdb" || value.source === "Open Food Facts") &&
-      value.upc &&
-      value.brand &&
-      value.packageName &&
-      Number.isFinite(value.packageQuantity) &&
-      value.unitLabel
-  );
 
 const readCachedLookup = (upc: string): ProductLookupResult | undefined => {
   try {
