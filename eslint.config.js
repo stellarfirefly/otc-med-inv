@@ -8,6 +8,16 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    files: ["cloudflare/**/*.js"],
+    languageOptions: {
+      globals: {
+        Response: "readonly",
+        URL: "readonly",
+        fetch: "readonly"
+      }
+    }
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     plugins: {
       "react-hooks": reactHooks,

@@ -32,6 +32,7 @@ interface OpenFoodFactsResponse {
 
 const CACHE_KEY = "otc-product-lookup-cache-v1";
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const PRODUCT_LOOKUP_PROXY_URL = "https://upc-proxy.stellarfirefly.workers.dev/";
 
 type CachedLookup = ProductLookupResult & { cachedAt: number };
 
@@ -57,7 +58,7 @@ export const lookupProductByUpc = async (rawUpc: string): Promise<ProductLookupR
     );
   }
 
-  for (const provider of [lookupUpcItemDb, lookupOpenFoodFacts]) {
+  for (const provider of [lookupProductProxy, lookupUpcItemDb, lookupOpenFoodFacts]) {
     try {
       const result = await provider(upc);
       if (result) {
@@ -70,6 +71,28 @@ export const lookupProductByUpc = async (rawUpc: string): Promise<ProductLookupR
   }
 
   throw new Error("No product details found for that UPC/EAN. Enter product details manually.");
+};
+
+const lookupProductProxy = async (upc: string): Promise<ProductLookupResult | undefined> => {
+  const url = new URL(PRODUCT_LOOKUP_PROXY_URL);
+  url.searchParams.set("upc", upc);
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    return undefined;
+  }
+
+  const payload = (await response.json()) as ProductLookupResult;
+  if (!isLookupResult(payload)) {
+    return undefined;
+  }
+
+  return payload;
 };
 
 const lookupUpcItemDb = async (upc: string): Promise<ProductLookupResult | undefined> => {
@@ -229,6 +252,17 @@ const isNumericLookupCode = (value: string) => /^\d+$/.test(value);
 const cleanText = (value?: string) => value?.replace(/\s+/g, " ").trim() ?? "";
 
 const firstCsvValue = (value?: string) => cleanText(value?.split(",")[0]);
+
+const isLookupResult = (value: ProductLookupResult): value is ProductLookupResult =>
+  Boolean(
+    value &&
+      (value.source === "UPCitemdb" || value.source === "Open Food Facts") &&
+      value.upc &&
+      value.brand &&
+      value.packageName &&
+      Number.isFinite(value.packageQuantity) &&
+      value.unitLabel
+  );
 
 const readCachedLookup = (upc: string): ProductLookupResult | undefined => {
   try {
