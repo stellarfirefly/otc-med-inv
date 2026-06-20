@@ -57,6 +57,10 @@ export const inventoryRepository = {
   },
 
   async addProduct(input: ProductInput) {
+    if (!Number.isFinite(input.packageQuantity) || input.packageQuantity <= 0) {
+      throw new Error("Package quantity must be greater than 0.");
+    }
+
     const now = isoNow();
     const product: Product = { ...input, id: createId(), upc: normalizeProductCode(input.upc), isActive: true, createdAt: now, updatedAt: now };
     await db.products.add(product);
@@ -69,8 +73,8 @@ export const inventoryRepository = {
       throw new Error("Product was not found.");
     }
 
-    if (patch.packageQuantity !== undefined && (!Number.isFinite(patch.packageQuantity) || patch.packageQuantity < 1)) {
-      throw new Error("Package quantity must be at least 1.");
+    if (patch.packageQuantity !== undefined && (!Number.isFinite(patch.packageQuantity) || patch.packageQuantity <= 0)) {
+      throw new Error("Package quantity must be greater than 0.");
     }
 
     const updatedProduct: Product = {

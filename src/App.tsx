@@ -339,8 +339,8 @@ const Manage = ({
             {medicationForms.map((form) => <option key={form}>{form}</option>)}
           </select>
         </label>
-        <Input name="reorderPoint" label="Reorder point" required type="number" min="0" defaultValue="100" />
-        <Input name="reorderAmount" label="Reorder amount" type="number" min="0" />
+        <Input name="reorderPoint" label="Reorder point" required type="number" min="0" step="any" defaultValue="100" />
+        <Input name="reorderAmount" label="Reorder amount" type="number" min="0" step="any" />
         <label>
           Notes
           <textarea name="notes" rows={3} />
@@ -424,7 +424,8 @@ const Manage = ({
           label="Package quantity"
           required
           type="number"
-          min="1"
+          min="0"
+          step="any"
           value={productDraft.packageQuantity}
           onChange={(event) => updateProductDraft("packageQuantity", event.target.value)}
         />
@@ -537,8 +538,8 @@ const Manage = ({
                     {medicationForms.map((form) => <option key={form}>{form}</option>)}
                   </select>
                 </label>
-                <Input name="reorderPoint" label="Reorder point" required type="number" min="0" defaultValue={selectedConcept.reorderPoint} />
-                <Input name="reorderAmount" label="Reorder amount" type="number" min="0" defaultValue={selectedConcept.reorderAmount ?? ""} />
+                <Input name="reorderPoint" label="Reorder point" required type="number" min="0" step="any" defaultValue={selectedConcept.reorderPoint} />
+                <Input name="reorderAmount" label="Reorder amount" type="number" min="0" step="any" defaultValue={selectedConcept.reorderAmount ?? ""} />
                 <label className="checkbox-field">
                   <input name="isActive" type="checkbox" defaultChecked={selectedConcept.isActive !== false} />
                   Reorder active
@@ -656,7 +657,8 @@ const Manage = ({
                   label="Package quantity"
                   required
                   type="number"
-                  min="1"
+                  min="0"
+                  step="any"
                   value={selectedProductDraft.packageQuantity}
                   onChange={(event) => updateSelectedProductDraft("packageQuantity", event.target.value)}
                 />
